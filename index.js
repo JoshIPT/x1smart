@@ -1,9 +1,38 @@
 import got from 'got';
-import * as mqtt from 'mqtt';
+import mqtt from 'mqtt';
+//import InfluxDB from '@influxdata/influxdb-client';
+import {InfluxDB,Point} from "@influxdata/influxdb-client";
+//const {InfluxDB, Point} = require('@influxdata/influxdb-client')
 
 const server = 'http://10.80.111.13/';
 const password = 'SJ4QUE8RBZ';
-const mqttServer = '127.0.0.1';
+const mqttServer = 'mqtt://10.80.111.44:1883/';
+const mqttTopic = 'x1smart';
+const INFLUXDB_TOKEN = "Ali2y79OTymK12pF-TzwxaIeH9sEh0dMz20y-dhAL0Wl-ea65M-1iYh30Q-NV7L1sNWteKk2YMR0TLO9Lc8rmA==";
+const influx_url = 'https://us-east-1-1.aws.cloud2.influxdata.com';
+
+const clientId = 'mqttjs_' + Math.random().toString(8).substr(2, 4);
+//const client  = mqtt.connect(mqttServer, {clientId: clientId, clean: false});
+const influx = new InfluxDB({
+    url: influx_url,
+    token: INFLUXDB_TOKEN
+});
+
+setInterval(poll, 5000);
+/*client.on("connect", function(connack) {
+    console.log("Client Connected");
+});
+client.on("close", function() {
+    console.log("Connection closed by client")
+})
+
+client.on("reconnect", function() {
+    console.log("Client trying a reconnection")
+})
+
+client.on("offline", function() {
+    console.log("Client is currently offline")
+})*/
 
 function poll() {
     got.post(server, {form: { optType: "ReadRealTimeData", pwd: password } }, {responseType: 'json'})
@@ -12,9 +41,24 @@ function poll() {
             try {
                 js = JSON.parse(res.body);
                 var reply = new X1Reply(js);
-                console.log(reply);
+
+                let org = `Tegan And Josh`;
+                let bucket = `solar`;
+
+                let writeClient = influx.getWriteApi(org, bucket, 'ns');
+                for (const property in reply) {
+                    let point = new Point(property)
+                        .timestamp(new Date())
+                        .floatField("value", reply[property]);
+                    writeClient.writePoint(point);
+                }
+                writeClient.flush();
+
+                //client.publish("solar_assistant/inverter_1/load_power/state", reply.pv1_power, {qos: 1, retain: true});
+
+
             } catch(e) {
-                console.log("Malformed response received from the inverter\n");
+                console.log("Malformed response received from the inverter", e.message);
             }
         })
         .catch(err => {
@@ -24,7 +68,7 @@ function poll() {
 
 class X1Reply {
     constructor (data) {
-        this.serial_number = data.Information[2];
+        //this.serial_number = data.Information[2];
         var values = data.Data;
         this.network_voltage = this.calc(values[0], 10, "V");
         this.output_current = this.calc(values[1], 10, "A");
@@ -44,7 +88,7 @@ class X1Reply {
         this.total_consumption = this.calc(values[52], 100, "KWh");
     }
     calc(value, divisor, suffix = "") {
-        return (Math.round(((value / divisor) + Number.EPSILON) * 100) / 100) + suffix;
+        return (Math.round(((value / divisor) + Number.EPSILON) * 100) / 100); // + suffix;
     }
 }
 

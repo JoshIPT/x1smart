@@ -10,6 +10,7 @@
   "author": "Josh Finlay",
   "license": "ISC",
   "dependencies": {
+    "@influxdata/influxdb-client": "^1.33.2",
     "got": "^13.0.0",
     "mqtt": "^4.3.7"
   },
