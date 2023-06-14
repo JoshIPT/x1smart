@@ -8,7 +8,7 @@ const server = 'http://10.80.111.13/';
 const password = 'SJ4QUE8RBZ';
 const mqttServer = 'mqtt://10.80.111.44:1883/';
 const mqttTopic = 'x1smart';
-const INFLUXDB_TOKEN = "Ali2y79OTymK12pF-TzwxaIeH9sEh0dMz20y-dhAL0Wl-ea65M-1iYh30Q-NV7L1sNWteKk2YMR0TLO9Lc8rmA==";
+const INFLUXDB_TOKEN = "--";
 const influx_url = 'https://us-east-1-1.aws.cloud2.influxdata.com';
 
 const clientId = 'mqttjs_' + Math.random().toString(8).substr(2, 4);
