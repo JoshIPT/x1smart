@@ -1,25 +1,17 @@
 import got from 'got';
 import mqtt from 'mqtt';
-//import InfluxDB from '@influxdata/influxdb-client';
-import {InfluxDB,Point} from "@influxdata/influxdb-client";
-//const {InfluxDB, Point} = require('@influxdata/influxdb-client')
 
 const server = 'http://10.80.111.13/';
 const password = 'SJ4QUE8RBZ';
 const mqttServer = 'mqtt://10.80.111.44:1883/';
 const mqttTopic = 'x1smart';
-const INFLUXDB_TOKEN = "--";
-const influx_url = 'https://us-east-1-1.aws.cloud2.influxdata.com';
 
 const clientId = 'mqttjs_' + Math.random().toString(8).substr(2, 4);
-//const client  = mqtt.connect(mqttServer, {clientId: clientId, clean: false});
-const influx = new InfluxDB({
-    url: influx_url,
-    token: INFLUXDB_TOKEN
-});
+const client  = mqtt.connect(mqttServer, {clientId: clientId, clean: false});
 
 setInterval(poll, 5000);
-/*client.on("connect", function(connack) {
+
+client.on("connect", function(connack) {
     console.log("Client Connected");
 });
 client.on("close", function() {
@@ -32,7 +24,7 @@ client.on("reconnect", function() {
 
 client.on("offline", function() {
     console.log("Client is currently offline")
-})*/
+})
 
 function poll() {
     got.post(server, {form: { optType: "ReadRealTimeData", pwd: password } }, {responseType: 'json'})
@@ -44,19 +36,10 @@ function poll() {
 
                 let org = `Tegan And Josh`;
                 let bucket = `solar`;
-
-                let writeClient = influx.getWriteApi(org, bucket, 'ns');
-                for (const property in reply) {
-                    let point = new Point(property)
-                        .timestamp(new Date())
-                        .floatField("value", reply[property]);
-                    writeClient.writePoint(point);
-                }
-                writeClient.flush();
-
-                //client.publish("solar_assistant/inverter_1/load_power/state", reply.pv1_power, {qos: 1, retain: true});
-
-
+                
+                // Example to publish - add your own below:
+                client.publish("solar_assistant/inverter_1/load_power/state", reply.pv1_power, {qos: 1, retain: true});
+                
             } catch(e) {
                 console.log("Malformed response received from the inverter", e.message);
             }
@@ -68,7 +51,7 @@ function poll() {
 
 class X1Reply {
     constructor (data) {
-        //this.serial_number = data.Information[2];
+        this.serial_number = data.Information[2];
         var values = data.Data;
         this.network_voltage = this.calc(values[0], 10, "V");
         this.output_current = this.calc(values[1], 10, "A");
